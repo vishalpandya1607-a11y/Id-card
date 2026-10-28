@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ID Card Maker</title>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--bg:#eef1f5;--panel:#fff;--ink:#14213d;--muted:#5b6578;--line:#d5dbe5;--ok:#1b7a3d;--warn:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1420;--panel:#172033;--ink:#e8ecf4;--muted:#9aa5ba;--line:#2a3550;--ok:#6fd08c;--warn:#ff8a80}}
+:root[data-theme="dark"]{--bg:#0e1420;--panel:#172033;--ink:#e8ecf4;--muted:#9aa5ba;--line:#2a3550;--ok:#6fd08c;--warn:#ff8a80}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Mukta','Noto Sans Devanagari',system-ui,sans-serif;line-height:1.5}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 20px;display:grid;gap:20px;grid-template-columns:1fr}
+@media(min-width:820px){main{grid-template-columns:minmax(0,1fr) 340px;align-items:start}}
+h1{font-size:1.5rem;margin:0 0 4px;font-weight:800}
+h2{font-size:1.1rem;margin:0 0 6px;font-weight:800}
+p.sub{margin:0 0 16px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+form{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+label{display:grid;gap:4px;font-size:.9rem;font-weight:600}
+label.full,.full{grid-column:1/-1}
+input{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
+input:focus-visible,button:focus-visible{outline:3px solid #f2a900;outline-offset:1px}
+input[type=color]{padding:2px;height:42px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;grid-column:1/-1}
+button{font:inherit;font-weight:600;padding:10px 16px;border-radius:8px;border:0;background:var(--ink);color:var(--bg);cursor:pointer}
+button.alt{background:transparent;color:var(--ink);border:1px solid var(--ink)}
+code{display:block;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.8rem;overflow-x:auto;white-space:nowrap;margin:6px 0}
+.msg{margin:6px 0 0;font-size:.9rem}.ok{color:var(--ok)}.bad{color:var(--warn)}
+.stage{position:sticky;top:12px;display:grid;gap:10px;justify-items:center}
+.hint{font-size:.85rem;color:var(--muted);text-align:center;margin:0}
+.card{width:300px;height:540px;border-radius:16px;background:#fff;color:#14213d;overflow:hidden;position:relative;box-shadow:0 8px 24px rgba(20,33,61,.25);border:1px solid #cfd6e2;--accent:#14213d;flex:none}
+.top{background:var(--accent);height:150px;color:#fff;text-align:center;padding:24px 14px 0}
+.slot{position:absolute;top:10px;left:50%;width:56px;height:10px;margin-left:-28px;border-radius:6px;background:#fff;box-shadow:inset 0 1px 3px rgba(0,0,0,.4)}
+.org{font-weight:800;font-size:.98rem;line-height:1.2}
+.tag{font-size:.74rem;opacity:.9;margin-top:3px;line-height:1.3}
+.photo{position:absolute;top:96px;left:50%;width:100px;height:120px;margin-left:-50px;border-radius:10px;border:4px solid #fff;background:#dfe5ee center/cover;overflow:hidden;display:grid;place-items:center;color:#7b879c;font-size:.75rem;text-align:center}
+.body{padding:74px 18px 0;text-align:center}
+.name{font-weight:800;font-size:1.25rem;line-height:1.2;word-break:break-word;margin-bottom:6px;color:var(--accent)}
+dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;text-align:left;margin:0;font-size:.85rem}
+dt{color:#5b6578}dd{margin:0;font-weight:600;word-break:break-word}
+.bar{position:absolute;left:0;right:0;bottom:0;height:98px;padding:8px 18px;border-top:2px solid var(--accent);background:#fff;display:flex;align-items:center;gap:12px}
+.qr{width:80px;height:80px;flex:none}
+.qr img,.qr canvas{width:80px!important;height:80px!important;display:block}
+.bar small{font-size:.72rem;color:#5b6578;line-height:1.3;text-align:left}
+#bulkWrap{max-width:1100px;margin:0 auto;padding:0 16px 40px}
+#bulk{display:flex;flex-wrap:wrap;gap:16px;justify-content:center}
+#bulk .card{zoom:.75}
+@media print{
+@page{margin:8mm}
+body{background:#fff}
+.noprint,.hint{display:none!important}
+main,#bulkWrap{display:block;padding:0;margin:0;max-width:none}
+body[data-print=single] #bulkWrap{display:none}
+body[data-print=bulk] main{display:none}
+.stage{position:static}
+.card{box-shadow:none;-webkit-print-color-adjust:exact;print-color-adjust:exact;break-inside:avoid}
+#bulk{display:grid;grid-template-columns:repeat(3,auto);gap:4mm;justify-content:start}
+#bulk .card{zoom:.7}
+}
+</style>
+</head>
+<body data-print="single">
+<main>
+<section class="noprint">
+<h1>ID Card Maker</h1>
+<p class="sub">Har card ka QR code uski details se alag banta hai.</p>
+
+<div class="panel">
+<h2>1. Card ki common details</h2>
+<form id="f" onsubmit="return false">
+<label class="full">Sanstha ka naam<input id="org" value="Election Commission of Rajasthan"></label>
+<label class="full">Karyalaya<input id="tag" value="Office of Returning Officer, Panchayat Jhallara"></label>
+<label class="full">Card ka rang<input id="color" type="color" value="#14213d"></label>
+</form>
+</div>
+
+<div class="panel">
+<h2>2. CSV se saare cards ek saath</h2>
+<p class="sub" style="margin-bottom:6px">CSV ki pehli line (header) ye honi chahiye:</p>
+<code id="hdr">name,employee_id,kramank,mobile,department,cell,valid_upto</code>
+<div class="actions" style="margin:6px 0 10px"><button type="button" class="alt" id="copyHdr">Header copy karein</button></div>
+<form onsubmit="return false">
+<label class="full">CSV file<input id="csv" type="file" accept=".csv,text/csv,text/plain"></label>
+<label class="full">Photos (optional, ek saath kai)<input id="photos" type="file" accept="image/*" multiple></label>
+</form>
+<p class="sub" style="margin:6px 0 0;font-size:.85rem">Photo ki file ka naam Employee ID jaisa rakhein, jaise EMP-0001.jpg. Naam match hone par photo apne aap lag jayegi.</p>
+<p class="msg" id="status"></p>
+<div class="actions" style="margin-top:10px"><button type="button" id="printAll" hidden>Saare cards print karein</button></div>
+</div>
+
+<div class="panel">
+<h2>Ya ek card haath se banayein</h2>
+<form id="one" onsubmit="return false">
+<label class="full">Naam<input id="name" value="Vishal Kumar"></label>
+<label>Employee ID<input id="eid" value="EMP-0001"></label>
+<label>ID Kramank<input id="kram" value="001"></label>
+<label>Mobile number<input id="mob" value="9876543210" inputmode="tel" maxlength="10"></label>
+<label>Valid upto date<input id="valid" value="31/03/2027"></label>
+<label>Department<input id="dept" value="Election Department"></label>
+<label>Cell<input id="cell" value="Counting Cell"></label>
+<label>Photo<input id="photo" type="file" accept="image/*"></label>
+<div class="actions">
+<button type="button" id="print">Ye card print karein</button>
+<button type="button" id="next" class="alt">Agla card (kramank +1)</button>
+</div>
+</form>
+</div>
+</section>
+<div class="stage"><div id="single"></div><p class="hint">Print dialog mein "Save as PDF" chunkar PDF bhi bana sakte hain.</p></div>
+</main>
+<div id="bulkWrap"><div id="bulk"></div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const L=[['eid','कर्मचारी ID'],['kram','क्रमांक'],['dept','विभाग'],['cell','सेल'],['mob','मोबाइल'],['valid','वैध तिथि तक']];
+
+function qrText(d){
+  return ['Name: '+d.name,'Employee ID: '+d.eid,'Kramank: '+d.kram,'Mobile: '+d.mob,
+  'Department: '+d.dept,'Cell: '+d.cell,'Valid upto: '+d.valid,$('org').value+', '+$('tag').value].join('\n');
+}
+function el(t,c,txt){const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e}
+function makeCard(d){
+  const c=el('div','card');c.style.setProperty('--accent',$('color').value);
+  const top=el('div','top');top.append(el('span','slot'),el('div','org',$('org').value),el('div','tag',$('tag').value));
+  const ph=el('div','photo');
+  if(d.photo)ph.style.backgroundImage='url("'+d.photo+'")';else ph.textContent='Photo';
+  const body=el('div','body');body.append(el('div','name',d.name));
+  const dl=el('dl');
+  L.forEach(([k,lab])=>{dl.append(el('dt',null,lab),el('dd',null,d[k]))});
+  body.append(dl);
+  const bar=el('div','bar'),q=el('div','qr'),s=el('small');
+  s.innerHTML='QR scan karke<br>card ki details jaanchein';
+  bar.append(q,s);
+  c.append(top,ph,body,bar);
+  try{new QRCode(q,{text:qrText(d),width:240,height:240,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});}
+  catch(e){q.textContent='QR error'}
+  return c;
+}
+
+/* single card */
+let photo1='';
+function one(){return{name:$('name').value,eid:$('eid').value,kram:$('kram').value,mob:$('mob').value,
+  valid:$('valid').value,dept:$('dept').value,cell:$('cell').value,photo:photo1}}
+function renderOne(){$('single').replaceChildren(makeCard(one()))}
+const rd=f=>new Promise(r=>{const x=new FileReader();x.onload=()=>r(x.result);x.readAsDataURL(f)});
+$('photo').addEventListener('change',async e=>{photo1=e.target.files[0]?await rd(e.target.files[0]):'';renderOne()});
+['one','f'].forEach(i=>$(i).addEventListener('input',()=>{renderOne();if(rows.length)renderBulk()}));
+$('next').addEventListener('click',()=>{
+  const inc=v=>{const m=v.match(/^(.*?)(\d+)$/);return m?m[1]+String(+m[2]+1).padStart(m[2].length,'0'):v};
+  $('kram').value=inc($('kram').value);$('eid').value=inc($('eid').value);
+  $('name').value='';$('mob').value='';$('photo').value='';photo1='';renderOne();$('name').focus();
+});
+$('print').addEventListener('click',()=>doPrint('single'));
+function doPrint(m){document.body.dataset.print=m;try{window.print()}catch(e){}}
+
+/* csv */
+let rows=[],photoMap={};
+function parseCSV(t){
+  t=t.replace(/^\uFEFF/,'');
+  const first=t.split(/\r?\n/)[0],sep=(first.match(/;/g)||[]).length>(first.match(/,/g)||[]).length?';':',';
+  const out=[];let r=[],f='',q=false;
+  for(let i=0;i<t.length;i++){
+    const c=t[i];
+    if(q){if(c=='"'){if(t[i+1]=='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c=='"')q=true;
+    else if(c==sep){r.push(f);f=''}
+    else if(c=='\n'||c=='\r'){if(c=='\r'&&t[i+1]=='\n')i++;r.push(f);f='';if(r.some(x=>x.trim()))out.push(r);r=[]}
+    else f+=c;
+  }
+  r.push(f);if(r.some(x=>x.trim()))out.push(r);
+  return out;
+}
+const alias={name:['name','naam','नाम'],eid:['employee_id','employeeid','emp_id','empid','eid','employee id'],
+ kram:['kramank','kramaank','serial','sr','id_kramank','क्रमांक'],mob:['mobile','mobile_number','phone','mob'],
+ dept:['department','dept','vibhag','विभाग'],cell:['cell','सेल'],valid:['valid_upto','valid','validity','valid_upto_date','valid upto']};
+function build(tbl){
+  const h=tbl[0].map(x=>x.trim().toLowerCase()),idx={};
+  for(const k in alias){idx[k]=h.findIndex(x=>alias[k].includes(x))}
+  const miss=Object.keys(idx).filter(k=>idx[k]<0);
+  const data=tbl.slice(1).map(r=>{const d={};for(const k in idx)d[k]=idx[k]>=0?(r[idx[k]]||'').trim():'';return d});
+  return{data,miss};
+}
+function renderBulk(){
+  const box=$('bulk');box.replaceChildren();
+  rows.forEach(d=>{
+    const key=[d.eid,d.kram].map(s=>s.toLowerCase());
+    d.photo=photoMap[key[0]]||photoMap[key[1]]||'';
+    box.append(makeCard(d));
+  });
+}
+function status(){
+  const ids=rows.map(r=>r.eid.toLowerCase()),dup=ids.filter((x,i)=>x&&ids.indexOf(x)!==i);
+  const withPh=rows.filter(r=>r.photo).length;
+  let m=rows.length+' card ban gaye. Photo lagi: '+withPh+'.';
+  const s=$('status');s.className='msg ok';
+  if(dup.length){m+=' Dhyan dein: ye Employee ID dobara aayi hai: '+[...new Set(dup)].join(', ')+'.';s.className='msg bad'}
+  s.textContent=m;
+}
+$('csv').addEventListener('change',async e=>{
+  const f=e.target.files[0];if(!f)return;
+  const tbl=parseCSV(await f.text());
+  const s=$('status');
+  if(tbl.length<2){s.className='msg bad';s.textContent='CSV mein data nahi mila. Pehli line header honi chahiye.';return}
+  const {data,miss}=build(tbl);
+  if(miss.length){s.className='msg bad';s.textContent='Ye column CSV mein nahi mile: '+miss.join(', ')+'. Header dobara check karein.';return}
+  rows=data;renderBulk();status();$('printAll').hidden=false;
+  $('bulkWrap').scrollIntoView({behavior:'smooth'});
+});
+$('photos').addEventListener('change',async e=>{
+  photoMap={};
+  for(const f of e.target.files){photoMap[f.name.replace(/\.[^.]+$/,'').toLowerCase()]=await rd(f)}
+  if(rows.length){renderBulk();status()}
+});
+$('printAll').addEventListener('click',()=>doPrint('bulk'));
+$('copyHdr').addEventListener('click',async()=>{
+  try{await navigator.clipboard.writeText($('hdr').textContent);$('copyHdr').textContent='Copy ho gaya'}
+  catch(e){const r=document.createRange();r.selectNodeContents($('hdr'));getSelection().removeAllRanges();getSelection().addRange(r);$('copyHdr').textContent='Select ho gaya, copy karein'}
+});
+window.addEventListener('afterprint',()=>{document.body.dataset.print='single'});
+renderOne();
+</script>
+</body>
+</html>
